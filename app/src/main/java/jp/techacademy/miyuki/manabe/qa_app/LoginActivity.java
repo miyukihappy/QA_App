@@ -95,9 +95,6 @@ public class LoginActivity extends AppCompatActivity {
 
                         // 表示名をPrefarenceに保存する
                         saveName(name);
-
-
-
                     } else {
                         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
@@ -209,6 +206,5 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(Const.NameKEY, name);
         editor.commit();
-
     }
 }

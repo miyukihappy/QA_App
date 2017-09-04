@@ -15,8 +15,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -39,51 +39,46 @@ public class MainActivity extends AppCompatActivity {
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
     private QuestionsListAdapter mAdapter;
+    private boolean mLoginFlag;
     private ArrayList<String> mFavorites;
-    private boolean mFavoriteFlag;
 
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
             HashMap map = (HashMap) dataSnapshot.getValue();
+            String title = (String) map.get("title");
+            String body = (String) map.get("body");
+            String name = (String) map.get("name");
             String uid = (String) map.get("uid");
-
-            if((mFavorites != null && mFavoriteFlag && mFavorites.contains(uid)) || !mFavoriteFlag){
-                String title = (String) map.get("title");
-                String body = (String) map.get("body");
-                String name = (String) map.get("name");
-
-                String imageString = (String) map.get("image");
-                byte[] bytes;
-                if (imageString != null) {
-                    bytes = Base64.decode(imageString, Base64.DEFAULT);
-                } else {
-                    bytes = new byte[0];
-                }
-
-                ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
-                HashMap answerMap = (HashMap) map.get("answers");
-                if (answerMap != null) {
-                    for (Object key : answerMap.keySet()) {
-                        HashMap temp = (HashMap) answerMap.get((String) key);
-                        String answerBody = (String) temp.get("body");
-                        String answerName = (String) temp.get("name");
-                        String answerUid = (String) temp.get("uid");
-                        Answer answer = new Answer(answerBody, answerName, answerUid, (String) key);
-                        answerArrayList.add(answer);
-                    }
-                }
-
-                Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
-                mQuestionArrayList.add(question);
-                mAdapter.notifyDataSetChanged();
+            String imageString = (String) map.get("image");
+            byte[] bytes;
+            if (imageString != null) {
+                bytes = Base64.decode(imageString, Base64.DEFAULT);
+            } else {
+                bytes = new byte[0];
             }
+
+            ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
+            HashMap answerMap = (HashMap) map.get("answers");
+            if (answerMap != null) {
+                for (Object key : answerMap.keySet()) {
+                    HashMap temp = (HashMap) answerMap.get((String) key);
+                    String answerBody = (String) temp.get("body");
+                    String answerName = (String) temp.get("name");
+                    String answerUid = (String) temp.get("uid");
+                    Answer answer = new Answer(answerBody, answerName, answerUid, (String) key);
+                    answerArrayList.add(answer);
+                }
+            }
+
+            Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
+            mQuestionArrayList.add(question);
+            mAdapter.notifyDataSetChanged();
         }
 
         @Override
         public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
             HashMap map = (HashMap) dataSnapshot.getValue();
 
             // 変更があったQuestionを探す
@@ -102,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
                             question.getAnswers().add(answer);
                         }
                     }
+
                     mAdapter.notifyDataSetChanged();
                 }
             }
@@ -120,9 +116,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCancelled(DatabaseError databaseError) {
 
-
         }
     };
+
     private ChildEventListener mFavoriteListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -151,12 +147,28 @@ public class MainActivity extends AppCompatActivity {
     };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
-        mFavoriteFlag = false;
+
+        TextView loginTextView = (TextView)findViewById(R.id.loginTextView);
+
+
+        loginTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mLoginFlag){
+                    FirebaseAuth.getInstance().signOut();
+                    Snackbar.make(view, "ログアウトしました", Snackbar.LENGTH_LONG).show();
+                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                    startActivity(intent);
+                }
+            }
+        });
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -199,22 +211,18 @@ public class MainActivity extends AppCompatActivity {
                 if (id == R.id.nav_hobby) {
                     mToolbar.setTitle("趣味");
                     mGenre = 1;
-                    mFavoriteFlag = false;
                 } else if (id == R.id.nav_life) {
                     mToolbar.setTitle("生活");
                     mGenre = 2;
-                    mFavoriteFlag = false;
                 } else if (id == R.id.nav_health) {
                     mToolbar.setTitle("健康");
                     mGenre = 3;
-                    mFavoriteFlag = false;
                 } else if (id == R.id.nav_compter) {
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
-                    mFavoriteFlag = false;
-                }else if (id == R.id.nav_favorite) {
+                } else if (id == R.id.nav_favorite) {
                     mToolbar.setTitle("お気に入り");
-                    mFavoriteFlag = true;
+                    mGenre = 5;
                 }
 
                 DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -229,23 +237,19 @@ public class MainActivity extends AppCompatActivity {
                 if (mGenreRef != null) {
                     mGenreRef.removeEventListener(mEventListener);
                 }
-                if(mFavoriteFlag){
-                    for(int i=1 ; i<=4; i++){
-                        mGenreRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(i));
-                        mGenreRef.addChildEventListener(mEventListener);
-                    }
-                }else {
-                    mGenreRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mGenre));
-                    mGenreRef.addChildEventListener(mEventListener);
-                }
-
                 FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-                if(mGenre == 0){
+                mGenreRef = mDatabaseReference.child(Const.ContentsPATH);
+                if(mGenre == 5){
+                    if(mFavorites != null) {
+                        for (String uid : mFavorites) {
+                            mGenreRef.orderByKey().equalTo(uid).addChildEventListener(mEventListener);
+                        }
+                    }
                     fab.hide();
                 }else{
+                    mGenreRef.orderByChild("genre").equalTo(String.valueOf(mGenre)).addChildEventListener(mEventListener);
                     fab.show();
                 }
-
                 return true;
             }
         });
@@ -268,23 +272,30 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        TextView loginTextView = (TextView)findViewById(R.id.loginTextView);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         if (user == null) {
-            // ログインしていなければログイン画面に遷移させる
-            Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-            startActivity(intent);
-        }
-        else {
+            mLoginFlag = false;
+            loginTextView.setText("ログイン");
+            navigationView.getMenu().getItem(4).setVisible(false);
+        } else {
+            mLoginFlag = true;
+            loginTextView.setText("ログアウト");
+            navigationView.getMenu().getItem(4).setVisible(true);
             DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
             DatabaseReference favoriteRef = dataBaseReference.child(Const.UsersPATH).child(user.getUid()).child(Const.FavoritesKEY);
             favoriteRef.addChildEventListener(mFavoriteListener);
         }
 
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }

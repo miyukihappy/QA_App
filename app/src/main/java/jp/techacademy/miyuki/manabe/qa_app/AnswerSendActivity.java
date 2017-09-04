@@ -26,7 +26,6 @@ public class AnswerSendActivity extends AppCompatActivity implements View.OnClic
     private Question mQuestion;
     private ProgressDialog mProgress;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

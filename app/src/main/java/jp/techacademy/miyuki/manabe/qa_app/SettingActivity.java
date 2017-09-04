@@ -1,6 +1,7 @@
 package jp.techacademy.miyuki.manabe.qa_app;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -80,6 +81,9 @@ public class SettingActivity extends AppCompatActivity {
                 FirebaseAuth.getInstance().signOut();
                 mNameText.setText("");
                 Snackbar.make(v, "ログアウトしました", Snackbar.LENGTH_LONG).show();
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);
+
             }
         });
     }

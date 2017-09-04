@@ -1,12 +1,15 @@
 package jp.techacademy.miyuki.manabe.qa_app;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -15,7 +18,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,13 +29,13 @@ public class QuestionDetailActivity extends AppCompatActivity {
     private QuestionDetailListAdapter mAdapter;
 
     private DatabaseReference mAnswerRef,mFavoriteRef;
-
     private ArrayList<String> mFavorites;
 
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
             HashMap map = (HashMap) dataSnapshot.getValue();
+
             String answerUid = dataSnapshot.getKey();
 
             for(Answer answer : mQuestion.getAnswers()) {
@@ -76,9 +78,10 @@ public class QuestionDetailActivity extends AppCompatActivity {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
             mFavorites = (ArrayList<String>)dataSnapshot.getValue();
-            if(mFavorites.contains(mQuestion.getUid())){
+            if(mFavorites.contains(mQuestion.getQuestionUid())){
                 Button button = (Button) findViewById(R.id.favorite_button);
                 button.setEnabled(false);
+                button.setBackgroundColor(Color.GRAY);
             }
         }
 
@@ -102,6 +105,7 @@ public class QuestionDetailActivity extends AppCompatActivity {
 
         }
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -118,7 +122,6 @@ public class QuestionDetailActivity extends AppCompatActivity {
         mAdapter = new QuestionDetailListAdapter(this, mQuestion);
         mListView.setAdapter(mAdapter);
         mAdapter.notifyDataSetChanged();
-
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -139,41 +142,46 @@ public class QuestionDetailActivity extends AppCompatActivity {
                 }
             }
         });
-
         Button favoriteButton = (Button) findViewById(R.id.favorite_button);
         favoriteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // ログイン済みのユーザーを取得する
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-                if (user == null) {
-                    // ログインしていなければログイン画面に遷移させる
-                    Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-                    startActivity(intent);
-                }
-                else {
+                    // ログイン済みのユーザーを取得する
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                     DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
                     DatabaseReference favoritesRef = dataBaseReference.child(Const.UsersPATH).child(user.getUid()).child(Const.FavoritesKEY);
                     favoritesRef.removeValue();
                     if(mFavorites == null){
                         mFavorites = new ArrayList<String>();
                     }
-                    mFavorites.add(mQuestion.getUid());
+                    mFavorites.add(mQuestion.getQuestionUid());
                     favoritesRef.push().setValue(mFavorites);
                     Button button = (Button) findViewById(R.id.favorite_button);
                     button.setEnabled(false);
-                }
+                    button.setBackgroundColor(Color.GRAY);
             }
         });
-
-
         DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
         mAnswerRef = dataBaseReference.child(Const.ContentsPATH).child(String.valueOf(mQuestion.getGenre())).child(mQuestion.getQuestionUid()).child(Const.AnswersPATH);
         mAnswerRef.addChildEventListener(mEventListener);
-        mFavoriteRef = dataBaseReference.child(Const.UsersPATH).child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(Const.FavoritesKEY);
-        mFavoriteRef.addChildEventListener(mFavoriteListener);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if(user != null){
+            mFavoriteRef = dataBaseReference.child(Const.UsersPATH).child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child(Const.FavoritesKEY);
+            mFavoriteRef.addChildEventListener(mFavoriteListener);
+        }
 
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Button button = (Button) findViewById(R.id.favorite_button);
+            button.setEnabled(false);
+            button.setBackgroundColor(Color.GRAY);
+        }else{
+
+        }
 
     }
 }

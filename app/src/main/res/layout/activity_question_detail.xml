@@ -31,6 +31,8 @@
         android:layout_height="wrap_content"
         android:text="お気に入り"
         android:layout_alignBottom="@+id/fab"
-        android:layout_toStartOf="@+id/fab" />
+        android:layout_toStartOf="@+id/fab"
+        android:textColor="@color/colorButtonText"
+        android:background="@drawable/custom_button"/>
 
 </RelativeLayout>

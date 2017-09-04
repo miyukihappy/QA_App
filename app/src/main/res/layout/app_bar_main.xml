@@ -21,7 +21,9 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_main" />
+    <include layout="@layout/content_main"
+        android:id="@+id/include"
+        android:layout_height="279dp" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
@@ -29,6 +31,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:src="@drawable/plus" />  <!-- plus.pngを使うようにする -->
+        android:src="@drawable/plus" />
+
+    <!-- plus.pngを使うようにする -->
 
 </android.support.design.widget.CoordinatorLayout>
