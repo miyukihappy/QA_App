@@ -39,9 +39,9 @@ public class MainActivity extends AppCompatActivity {
     private ListView mListView;
     private ArrayList<Question> mQuestionArrayList;
     private QuestionsListAdapter mAdapter;
-    private boolean mLoginFlag;
     private ArrayList<String> mFavorites;
-
+    private FloatingActionButton mFab;
+    private TextView mLoginTextView;
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -152,25 +152,26 @@ public class MainActivity extends AppCompatActivity {
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        TextView loginTextView = (TextView)findViewById(R.id.loginTextView);
+        mLoginTextView = (TextView)findViewById(R.id.loginTextView);
+        mFab = (FloatingActionButton) findViewById(R.id.fab);
 
-
-        loginTextView.setOnClickListener(new View.OnClickListener() {
+        mLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mLoginFlag){
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if(user != null){
                     FirebaseAuth.getInstance().signOut();
                     Snackbar.make(view, "ログアウトしました", Snackbar.LENGTH_LONG).show();
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                    startActivity(intent);
+                    mFab.hide();
+                    mLoginTextView.setText("ログイン");
                 } else {
                     Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
                     startActivity(intent);
                 }
             }
         });
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+
+        mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // ジャンルを選択していない場合（mGenre == 0）はエラーを表示するだけ
@@ -237,7 +238,6 @@ public class MainActivity extends AppCompatActivity {
                 if (mGenreRef != null) {
                     mGenreRef.removeEventListener(mEventListener);
                 }
-                FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
                 mGenreRef = mDatabaseReference.child(Const.ContentsPATH);
                 if(mGenre == 5){
                     if(mFavorites != null) {
@@ -245,10 +245,16 @@ public class MainActivity extends AppCompatActivity {
                             mGenreRef.orderByKey().equalTo(uid).addChildEventListener(mEventListener);
                         }
                     }
-                    fab.hide();
+                    mFab.hide();
                 }else{
                     mGenreRef.orderByChild("genre").equalTo(String.valueOf(mGenre)).addChildEventListener(mEventListener);
-                    fab.show();
+                    mFab.show();
+                }
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user == null) {
+                    mFab.hide();
+                }else{
+                    mFab.show();
                 }
                 return true;
             }
@@ -277,20 +283,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        TextView loginTextView = (TextView)findViewById(R.id.loginTextView);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+
         if (user == null) {
-            mLoginFlag = false;
-            loginTextView.setText("ログイン");
+            mLoginTextView.setText("ログイン");
             navigationView.getMenu().getItem(4).setVisible(false);
+            mFab.hide();
         } else {
-            mLoginFlag = true;
-            loginTextView.setText("ログアウト");
+            mLoginTextView.setText("ログアウト");
             navigationView.getMenu().getItem(4).setVisible(true);
             DatabaseReference dataBaseReference = FirebaseDatabase.getInstance().getReference();
             DatabaseReference favoriteRef = dataBaseReference.child(Const.UsersPATH).child(user.getUid()).child(Const.FavoritesKEY);
             favoriteRef.addChildEventListener(mFavoriteListener);
+            mFab.show();
         }
 
     }

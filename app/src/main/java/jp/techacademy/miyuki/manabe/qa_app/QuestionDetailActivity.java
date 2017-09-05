@@ -175,12 +175,14 @@ public class QuestionDetailActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        Button button = (Button) findViewById(R.id.favorite_button);
         if (user == null) {
-            Button button = (Button) findViewById(R.id.favorite_button);
-            button.setEnabled(false);
-            button.setBackgroundColor(Color.GRAY);
+            fab.setVisibility(View.INVISIBLE);
+            button.setVisibility(View.INVISIBLE);
         }else{
-
+            fab.setVisibility(View.VISIBLE);
+            button.setVisibility(View.VISIBLE);
         }
 
     }
